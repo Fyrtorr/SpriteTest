@@ -39,8 +39,23 @@ export class Player {
         };
     }
 
+    getHit(duration) {
+        this.state = 'hurt';
+        this.actionTimer = duration;
+    }
+
     update(deltaTime, objects) {
         const dt = deltaTime / 1000;
+
+        // Handle hurt stun
+        if (this.state === 'hurt') {
+            this.actionTimer -= deltaTime;
+            if (this.actionTimer <= 0) {
+                this.state = 'idle';
+            }
+            if (!this.isGrounded) this._applyGravity(dt, objects);
+            return;
+        }
 
         // Handle slash lock
         if (this.state === 'slash') {

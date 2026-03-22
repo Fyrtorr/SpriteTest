@@ -2,6 +2,7 @@ import { clearPressedKeys } from './input.js';
 import { Sprite } from './sprite.js';
 import { Player } from './player.js';
 import { createEnvironment, drawEnvironment } from './environment.js';
+import { EffectsManager } from './effects.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -21,6 +22,13 @@ const player = new Player(
     CANVAS_HEIGHT
 );
 const objects = createEnvironment();
+const effects = new EffectsManager(CANVAS_WIDTH, CANVAS_HEIGHT);
+
+// Toggle buttons
+document.getElementById('toggle-dodgeball').addEventListener('click', (e) => {
+    const active = effects.toggle('dodgeball');
+    e.target.classList.toggle('active', active);
+});
 
 let lastTime = performance.now();
 
@@ -30,6 +38,7 @@ function gameLoop(now) {
     if (deltaTime > MAX_DELTA) deltaTime = MAX_DELTA;
 
     player.update(deltaTime, objects);
+    effects.update(deltaTime, player);
     sprite.setAnimation(player.state);
     sprite.update(deltaTime);
 
@@ -37,13 +46,9 @@ function gameLoop(now) {
     ctx.fillStyle = '#4a8c3f';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw environment behind player
-    drawEnvironment(ctx, objects, player);
-
-    // Draw player shadow on ground
+    drawEnvironment(ctx, objects);
     drawShadow(ctx, player);
-
-    // Draw player sprite (at visual height)
+    effects.draw(ctx);
     sprite.draw(ctx, player.x, player.drawY, player.direction);
 
     clearPressedKeys();
@@ -53,7 +58,6 @@ function gameLoop(now) {
 function drawShadow(ctx, player) {
     const shadowX = player.x + 32;
     const shadowY = player.y + 58;
-    // Shadow shrinks as player gets higher
     const lift = player.z - player.groundLevel;
     const scale = Math.max(0.3, 1 - lift / 120);
 
