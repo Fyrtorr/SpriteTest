@@ -25,9 +25,14 @@ const objects = createEnvironment();
 const effects = new EffectsManager(CANVAS_WIDTH, CANVAS_HEIGHT);
 
 // Toggle buttons
-document.getElementById('toggle-dodgeball').addEventListener('click', (e) => {
-    const active = effects.toggle('dodgeball');
-    e.target.classList.toggle('active', active);
+const DODGEBALL_LABELS = ['Dodgeball: Off', 'Dodgeball: Low', 'Dodgeball: Med', 'Dodgeball: High'];
+const dodgeballBtn = document.getElementById('toggle-dodgeball');
+dodgeballBtn.addEventListener('click', () => {
+    const level = effects.cycleDodgeballIntensity();
+    dodgeballBtn.textContent = DODGEBALL_LABELS[level];
+    dodgeballBtn.classList.toggle('active', level > 0);
+    if (level >= 2) dodgeballBtn.classList.add('intense');
+    else dodgeballBtn.classList.remove('intense');
 });
 
 let lastTime = performance.now();

@@ -67,3 +67,14 @@ canvas {
     color: #fff;
     border-color: #ee4444;
 }
+
+.effect-btn.intense {
+    background: #ee4400;
+    border-color: #ff6622;
+    animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from { box-shadow: 0 0 4px #ee440066; }
+    to { box-shadow: 0 0 12px #ee4400aa; }
+}
