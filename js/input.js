@@ -1,16 +1,28 @@
-const keysPressed = new Set();
+const keysDown = new Set();
+const keysJustPressed = new Set();
 
 window.addEventListener('keydown', (e) => {
-    keysPressed.add(e.code);
+    if (!keysDown.has(e.code)) {
+        keysJustPressed.add(e.code);
+    }
+    keysDown.add(e.code);
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
         e.preventDefault();
     }
 });
 
 window.addEventListener('keyup', (e) => {
-    keysPressed.delete(e.code);
+    keysDown.delete(e.code);
 });
 
 export function isKeyDown(code) {
-    return keysPressed.has(code);
+    return keysDown.has(code);
+}
+
+export function wasKeyPressed(code) {
+    return keysJustPressed.has(code);
+}
+
+export function clearPressedKeys() {
+    keysJustPressed.clear();
 }
