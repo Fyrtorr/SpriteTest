@@ -30,6 +30,13 @@ export class Sprite {
         this.image.src = imageSrc;
     }
 
+    loadSheet(src) {
+        this.loaded = false;
+        this.image = new Image();
+        this.image.onload = () => { this.loaded = true; };
+        this.image.src = src;
+    }
+
     setAnimation(name) {
         if (name !== this.currentAnimation) {
             this.previousAnimation = this.currentAnimation;

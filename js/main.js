@@ -24,6 +24,45 @@ const player = new Player(
 const objects = createEnvironment();
 const effects = new EffectsManager(CANVAS_WIDTH, CANVAS_HEIGHT);
 
+// Sprite sheet selector
+const SPRITE_SHEETS = [
+    { name: 'Character', src: './assets/character.png' },
+    { name: 'Original', src: './assets/character-original.png' },
+];
+
+const spriteOptions = document.getElementById('sprite-options');
+SPRITE_SHEETS.forEach((sheet, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'sprite-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = sheet.name;
+    btn.addEventListener('click', () => {
+        sprite.loadSheet(sheet.src);
+        spriteOptions.querySelectorAll('.sprite-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+    spriteOptions.appendChild(btn);
+});
+
+// Custom upload
+document.getElementById('sprite-upload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    sprite.loadSheet(url);
+    // Add as option
+    const btn = document.createElement('button');
+    btn.className = 'sprite-btn active';
+    btn.textContent = file.name.replace('.png', '');
+    spriteOptions.querySelectorAll('.sprite-btn').forEach(b => b.classList.remove('active'));
+    btn.addEventListener('click', () => {
+        sprite.loadSheet(url);
+        spriteOptions.querySelectorAll('.sprite-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+    spriteOptions.appendChild(btn);
+    e.target.value = '';
+});
+
 // Toggle buttons
 const DODGEBALL_LABELS = ['Dodgeball: Off', 'Dodgeball: Low', 'Dodgeball: Med', 'Dodgeball: High'];
 const dodgeballBtn = document.getElementById('toggle-dodgeball');
