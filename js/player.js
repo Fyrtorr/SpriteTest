@@ -44,6 +44,19 @@ export class Player {
         this.actionTimer = duration;
     }
 
+    getKickZone() {
+        if (this.state !== 'slash') return null;
+        const cx = this.x + 32;
+        const cy = this.y + 32;
+        const range = 40;
+        switch (this.direction) {
+            case 'right': return { x: cx, y: cy - 16, w: range, h: 32 };
+            case 'left':  return { x: cx - range, y: cy - 16, w: range, h: 32 };
+            case 'down':  return { x: cx - 16, y: cy, w: 32, h: range };
+            case 'up':    return { x: cx - 16, y: cy - range, w: 32, h: range };
+        }
+    }
+
     update(deltaTime, objects) {
         const dt = deltaTime / 1000;
 

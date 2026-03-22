@@ -5,6 +5,8 @@ const DODGEBALL_GRAVITY = 600;      // gravity for bounce physics
 const DODGEBALL_BOUNCE_DAMPING = 0.65; // energy kept per bounce
 const DODGEBALL_FRICTION = 0.98;    // horizontal slowdown per frame
 const HIT_STUN_DURATION = 800;
+const KICK_FORCE = 400;
+const KICK_LIFT = 200;
 const MAX_DODGEBALLS = 60;          // cap to avoid performance issues
 const SPAWN_INTERVALS = [800, 400, 150, 60]; // ms per intensity level
 
@@ -70,6 +72,31 @@ export class EffectsManager {
                 bounces: 0,
                 alive: true,
             });
+        }
+
+        // Kick detection
+        const kickZone = player.getKickZone();
+        if (kickZone) {
+            for (const ball of this.dodgeballs) {
+                if (ball.kicked) continue;
+                // Check if ball center is inside kick zone
+                if (ball.x > kickZone.x && ball.x < kickZone.x + kickZone.w &&
+                    ball.y > kickZone.y && ball.y < kickZone.y + kickZone.h &&
+                    ball.z < 30) {
+                    ball.kicked = true;
+                    ball.bounces = 0; // reset bounces so it lives longer
+                    ball.vz = KICK_LIFT;
+                    const dir = player.direction;
+                    if (dir === 'right') { ball.vx = KICK_FORCE; ball.vy = 0; }
+                    else if (dir === 'left') { ball.vx = -KICK_FORCE; ball.vy = 0; }
+                    else if (dir === 'down') { ball.vy = KICK_FORCE * 0.6; ball.vx = 0; }
+                    else if (dir === 'up') { ball.vy = -KICK_FORCE * 0.6; ball.vx = 0; }
+                    ball.rotSpeed = (Math.random() - 0.5) * 20;
+                }
+            }
+        } else {
+            // Reset kicked flag when not slashing
+            for (const ball of this.dodgeballs) ball.kicked = false;
         }
 
         // Update balls
