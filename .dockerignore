@@ -1,0 +1,8 @@
+.git
+.github
+.claude
+node_modules
+lpc-generator
+game
+*.md
+docker-compose.yml
