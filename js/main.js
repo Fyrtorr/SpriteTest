@@ -35,6 +35,11 @@ dodgeballBtn.addEventListener('click', () => {
     else dodgeballBtn.classList.remove('intense');
 });
 
+// Survival timer
+let survivalTime = 0;
+let bestTime = parseFloat(localStorage.getItem('dodgeball-best') || '0');
+let wasHurt = false;
+
 let lastTime = performance.now();
 
 function gameLoop(now) {
@@ -47,6 +52,21 @@ function gameLoop(now) {
     sprite.setAnimation(player.state);
     sprite.update(deltaTime);
 
+    // Update survival timer when dodgeball is active
+    if (effects.isActive('dodgeball')) {
+        if (player.state === 'hurt' && !wasHurt) {
+            // Just got hit — save best and reset
+            if (survivalTime > bestTime) {
+                bestTime = survivalTime;
+                localStorage.setItem('dodgeball-best', bestTime.toString());
+            }
+            survivalTime = 0;
+        } else if (player.state !== 'hurt') {
+            survivalTime += deltaTime;
+        }
+        wasHurt = player.state === 'hurt';
+    }
+
     // Draw
     ctx.fillStyle = '#4a8c3f';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -56,8 +76,44 @@ function gameLoop(now) {
     effects.draw(ctx);
     sprite.draw(ctx, player.x, player.drawY, player.direction);
 
+    if (effects.isActive('dodgeball')) {
+        drawTimer(ctx);
+    }
+
     clearPressedKeys();
     requestAnimationFrame(gameLoop);
+}
+
+function drawTimer(ctx) {
+    const current = formatTime(survivalTime);
+    const best = formatTime(bestTime);
+
+    ctx.save();
+
+    // Background bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, 32);
+
+    // Current time
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Time: ${current}`, 12, 16);
+
+    // Best time
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText(`Best: ${best}`, CANVAS_WIDTH - 160, 16);
+
+    ctx.restore();
+}
+
+function formatTime(ms) {
+    const totalSec = ms / 1000;
+    const min = Math.floor(totalSec / 60);
+    const sec = Math.floor(totalSec % 60);
+    const dec = Math.floor((totalSec % 1) * 10);
+    if (min > 0) return `${min}:${sec.toString().padStart(2, '0')}.${dec}`;
+    return `${sec}.${dec}s`;
 }
 
 function drawShadow(ctx, player) {
