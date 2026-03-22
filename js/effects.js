@@ -51,7 +51,7 @@ export class EffectsManager {
             this.spawnTimer = DODGEBALL_SPAWN_INTERVAL;
             this.dodgeballs.push({
                 x: Math.random() * (this.canvasWidth - 40) + 20,
-                y: -20,
+                y: Math.random() * (this.canvasHeight - 80) + 40, // landing spot on ground
                 z: 200 + Math.random() * 100, // start high up
                 speed: DODGEBALL_SPEED + Math.random() * 100,
                 radius: DODGEBALL_RADIUS,
