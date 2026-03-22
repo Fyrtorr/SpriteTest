@@ -5,10 +5,10 @@ const FRAME_DURATION = 100; // ms per frame
 
 // LPC spritesheet walk animation rows
 const DIRECTION_ROW = {
-    up: 7,
-    left: 8,
-    down: 9,
-    right: 10
+    up: 8,
+    left: 9,
+    down: 10,
+    right: 11
 };
 
 export class Sprite {
