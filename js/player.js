@@ -5,17 +5,17 @@ const RUN_SPEED = 350;
 const SQRT2 = Math.SQRT2;
 const SLASH_DURATION = 600;
 
-// Jump physics
-const JUMP_VELOCITY = -400; // initial upward velocity (pixels/sec)
-const GRAVITY = 1200;       // gravity acceleration (pixels/sec^2)
+// Jump physics (z-axis: positive = up on screen)
+const JUMP_VELOCITY = 400;
+const GRAVITY = 1200;
 
 export class Player {
     constructor(x, y, canvasWidth, canvasHeight) {
         this.x = x;
         this.y = y;         // ground position (foot level)
-        this.z = 0;         // height above ground (0 = on ground)
-        this.vz = 0;        // vertical velocity
-        this.groundLevel = 0; // current ground elevation
+        this.z = 0;         // height above ground (positive = up)
+        this.vz = 0;        // vertical velocity (positive = upward)
+        this.groundLevel = 0; // elevation of surface we're standing on
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
         this.direction = 'down';
@@ -23,11 +23,11 @@ export class Player {
         this.actionTimer = 0;
         this.isGrounded = true;
 
-        // Collision box (relative to x,y — feet area)
+        // Collision box (feet area relative to sprite x,y)
         this.hitWidth = 32;
         this.hitHeight = 16;
-        this.hitOffsetX = 16; // center the 32px box in the 64px sprite
-        this.hitOffsetY = 48; // near the feet
+        this.hitOffsetX = 16;
+        this.hitOffsetY = 48;
     }
 
     getHitbox() {
@@ -48,10 +48,7 @@ export class Player {
             if (this.actionTimer <= 0) {
                 this.state = 'idle';
             }
-            // Still apply gravity while slashing in air
-            if (!this.isGrounded) {
-                this._applyGravity(dt, objects);
-            }
+            if (!this.isGrounded) this._applyGravity(dt, objects);
             return;
         }
 
@@ -74,7 +71,7 @@ export class Player {
             this._applyGravity(dt, objects);
         }
 
-        // Movement (can move while jumping)
+        // Movement
         let dx = 0;
         let dy = 0;
         if (isKeyDown('KeyW') || isKeyDown('ArrowUp')) dy -= 1;
@@ -94,24 +91,16 @@ export class Player {
             const speed = isRunning ? RUN_SPEED : WALK_SPEED;
             const magnitude = (dx !== 0 && dy !== 0) ? SQRT2 : 1;
 
-            const newX = this.x + (dx / magnitude) * speed * dt;
-            const newY = this.y + (dy / magnitude) * speed * dt;
-
-            // Try moving, check collisions with objects
             const oldX = this.x;
             const oldY = this.y;
 
             // Try X movement
-            this.x = newX;
-            if (this._collidesWithWall(objects)) {
-                this.x = oldX;
-            }
+            this.x += (dx / magnitude) * speed * dt;
+            if (this._collidesWithWall(objects)) this.x = oldX;
 
             // Try Y movement
-            this.y = newY;
-            if (this._collidesWithWall(objects)) {
-                this.y = oldY;
-            }
+            this.y += (dy / magnitude) * speed * dt;
+            if (this._collidesWithWall(objects)) this.y = oldY;
 
             // Clamp to canvas
             this.x = Math.max(0, Math.min(this.canvasWidth - 64, this.x));
@@ -124,7 +113,7 @@ export class Player {
             this.state = 'idle';
         }
 
-        // Update ground level based on what we're standing on
+        // Update ground level when grounded
         if (this.isGrounded) {
             this.groundLevel = this._getGroundLevel(objects);
             this.z = this.groundLevel;
@@ -132,20 +121,18 @@ export class Player {
     }
 
     _applyGravity(dt, objects) {
-        this.vz += GRAVITY * dt;
-        this.z += this.vz * dt;
+        this.vz -= GRAVITY * dt;  // gravity pulls velocity downward
+        this.z += this.vz * dt;   // update height
 
         const ground = this._getGroundLevel(objects);
 
-        if (this.z >= ground && this.vz > 0) {
-            // Landed
+        // Landed when falling and z drops to ground level
+        if (this.z <= ground && this.vz < 0) {
             this.z = ground;
             this.vz = 0;
             this.isGrounded = true;
             this.groundLevel = ground;
-            if (this.state === 'jump') {
-                this.state = 'idle';
-            }
+            if (this.state === 'jump') this.state = 'idle';
         }
     }
 
@@ -153,9 +140,8 @@ export class Player {
         const hb = this.getHitbox();
         for (const obj of objects) {
             if (!obj.solid) continue;
-            // Only collide with walls if we're at the same elevation
-            // (player can walk on top of objects they've jumped onto)
-            if (this.z < obj.height - 8) {
+            // Only block if player is below the top of the object
+            if (this.z < obj.height) {
                 if (rectsOverlap(hb, obj)) return true;
             }
         }
@@ -168,25 +154,17 @@ export class Player {
 
         for (const obj of objects) {
             if (!obj.standable) continue;
+            if (!rectsOverlap(hb, obj)) continue;
 
-            // Check if player's feet are over this object
-            if (rectsOverlap(hb, obj)) {
-                if (obj.type === 'stairs') {
-                    // Gradual height based on position on stairs
-                    const progress = Math.max(0, Math.min(1,
-                        (obj.y + obj.h - (hb.y + hb.h)) / obj.h
-                    ));
-                    const stairHeight = progress * obj.height;
-                    if (stairHeight > highest) highest = stairHeight;
-                } else {
-                    if (obj.height > highest) highest = obj.height;
-                }
+            // Only land on objects if we're at or above their height
+            if (this.z >= obj.height - 4) {
+                if (obj.height > highest) highest = obj.height;
             }
         }
         return highest;
     }
 
-    // Visual Y position (sprite draws higher when elevated or jumping)
+    // Visual Y position (sprite draws higher when elevated)
     get drawY() {
         return this.y - this.z;
     }

@@ -1,108 +1,103 @@
-// Environment objects that the player can interact with
-
 export function createEnvironment() {
     return [
-        // Wooden crate - player can jump on top
+        // Wooden crate
         {
             type: 'box',
             x: 300, y: 320, w: 64, h: 48,
-            height: 40,    // how tall it is (for jumping onto)
+            height: 40,
             solid: true,
             standable: true,
             color: '#8B6914',
             topColor: '#A0822A',
             label: 'Crate',
         },
-        // Stone stairs - gradual elevation
-        {
-            type: 'stairs',
-            x: 520, y: 280, w: 96, h: 128,
-            height: 60,    // max elevation at the top
-            solid: false,
-            standable: true,
-            color: '#777',
-            topColor: '#999',
-            label: 'Stairs',
-        },
-        // Platform at top of stairs
+        // Second crate stacked area
         {
             type: 'box',
-            x: 520, y: 220, w: 96, h: 64,
-            height: 60,
-            solid: false,
+            x: 180, y: 380, w: 64, h: 48,
+            height: 40,
+            solid: true,
+            standable: true,
+            color: '#8B6914',
+            topColor: '#A0822A',
+            label: 'Crate',
+        },
+        // Stone platform (raised)
+        {
+            type: 'box',
+            x: 520, y: 280, w: 128, h: 80,
+            height: 50,
+            solid: true,
             standable: true,
             color: '#666',
             topColor: '#888',
             label: 'Platform',
         },
+        // Steps leading to platform (small box as a step)
+        {
+            type: 'box',
+            x: 490, y: 360, w: 48, h: 32,
+            height: 24,
+            solid: true,
+            standable: true,
+            color: '#777',
+            topColor: '#999',
+            label: 'Step',
+        },
     ];
 }
 
-export function drawEnvironment(ctx, objects, player) {
-    for (const obj of objects) {
-        if (obj.type === 'box') {
-            drawBox(ctx, obj);
-        } else if (obj.type === 'stairs') {
-            drawStairs(ctx, obj);
-        }
+export function drawEnvironment(ctx, objects) {
+    // Sort by Y so objects further back draw first
+    const sorted = [...objects].sort((a, b) => a.y - b.y);
+
+    for (const obj of sorted) {
+        drawBox(ctx, obj);
     }
 }
 
 function drawBox(ctx, obj) {
-    const elevation = obj.height;
+    const elev = obj.height;
 
-    // Front face (shifted up by elevation)
+    // Side face (visible depth)
+    ctx.fillStyle = darken(obj.color, 0.7);
+    ctx.fillRect(obj.x, obj.y + obj.h - elev, obj.w, elev);
+
+    // Front face
     ctx.fillStyle = obj.color;
-    ctx.fillRect(obj.x, obj.y - elevation, obj.w, obj.h);
+    ctx.fillRect(obj.x, obj.y - elev, obj.w, obj.h);
 
     // Top face
     ctx.fillStyle = obj.topColor;
-    ctx.fillRect(obj.x, obj.y - elevation, obj.w, 12);
+    ctx.fillRect(obj.x, obj.y - elev, obj.w, 10);
 
-    // Border
-    ctx.strokeStyle = '#00000044';
+    // Borders
+    ctx.strokeStyle = '#00000033';
     ctx.lineWidth = 1;
-    ctx.strokeRect(obj.x, obj.y - elevation, obj.w, obj.h);
-    ctx.strokeRect(obj.x, obj.y - elevation, obj.w, 12);
+    ctx.strokeRect(obj.x, obj.y - elev, obj.w, obj.h);
+    ctx.strokeRect(obj.x, obj.y - elev, obj.w, 10);
+    ctx.strokeRect(obj.x, obj.y + obj.h - elev, obj.w, elev);
 
-    // Wood grain / detail lines on crate
-    if (obj.type === 'box' && obj.label === 'Crate') {
+    // Crate wood grain detail
+    if (obj.label === 'Crate') {
         ctx.strokeStyle = '#6B4F10';
         ctx.beginPath();
-        // Horizontal plank lines
-        const faceTop = obj.y - elevation + 12;
-        const faceH = obj.h - 12;
+        const faceTop = obj.y - elev + 10;
+        const faceH = obj.h - 10;
         for (let i = 1; i < 3; i++) {
             const ly = faceTop + (faceH / 3) * i;
             ctx.moveTo(obj.x + 2, ly);
             ctx.lineTo(obj.x + obj.w - 2, ly);
         }
-        // Cross brace
         ctx.moveTo(obj.x + obj.w / 2, faceTop + 2);
         ctx.lineTo(obj.x + obj.w / 2, faceTop + faceH - 2);
         ctx.stroke();
     }
 }
 
-function drawStairs(ctx, obj) {
-    const steps = 5;
-    const stepW = obj.w;
-    const stepH = obj.h / steps;
-    const maxElev = obj.height;
-
-    for (let i = 0; i < steps; i++) {
-        const progress = (steps - i) / steps;
-        const elevation = progress * maxElev;
-        const sy = obj.y + i * stepH;
-
-        // Step surface
-        const shade = 100 + Math.floor(progress * 60);
-        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-        ctx.fillRect(obj.x, sy - elevation, stepW, stepH);
-
-        // Step edge
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(obj.x, sy - elevation, stepW, stepH);
-    }
+function darken(hex, factor) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgb(${Math.floor(r * factor)}, ${Math.floor(g * factor)}, ${Math.floor(b * factor)})`;
 }
