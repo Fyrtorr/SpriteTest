@@ -1,6 +1,7 @@
 // Butterfly catching mini-game mode
 
 const FRAME_SIZE = 1250;       // source frame size in spritesheet
+const FRAME_INSET = 100;       // crop inset to avoid edge artifacts
 const DRAW_SIZE = 48;          // rendered size on screen
 const FLAP_SPEED = 150;        // ms per frame
 const MAX_BUTTERFLIES = 8;
@@ -229,17 +230,17 @@ export class ButterflyMode {
         if (this.imageLoaded) {
             for (const b of this.butterflies) {
                 const f = FLAP_CYCLE[b.frame];
-                const sx = f.col * FRAME_SIZE;
-                const sy = f.row * FRAME_SIZE;
+                const sx = f.col * FRAME_SIZE + FRAME_INSET;
+                const sy = f.row * FRAME_SIZE + FRAME_INSET;
+                const srcSize = FRAME_SIZE - FRAME_INSET * 2;
                 const size = DRAW_SIZE * b.scale;
-                const offset = (DRAW_SIZE - size) / 2;
 
                 ctx.save();
                 if (b.caught) ctx.globalAlpha = b.catchTimer / 500;
                 ctx.drawImage(
                     this.image,
-                    sx, sy, FRAME_SIZE, FRAME_SIZE,
-                    b.x - size / 2 + offset, b.y - size / 2 + offset, size, size
+                    sx, sy, srcSize, srcSize,
+                    b.x - size / 2, b.y - size / 2, size, size
                 );
                 ctx.restore();
             }
