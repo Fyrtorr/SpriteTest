@@ -206,6 +206,7 @@ export class ButterflyMode {
             x, y,
             vx: Math.cos(angle) * MOVE_SPEED,
             vy: Math.sin(angle) * MOVE_SPEED * 0.6,
+            scale: 1,
             frame: Math.floor(Math.random() * FLAP_CYCLE.length),
             animTimer: 0,
             dirTimer: DIRECTION_CHANGE,
