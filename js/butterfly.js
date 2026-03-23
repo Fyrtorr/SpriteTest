@@ -17,6 +17,11 @@ const CLOCK_FALL_SPEED = 80;
 const CLOCK_BONUS = 10000;     // +10 seconds in ms
 const MAX_CLOCKS = 3;
 
+// Pulse powerup (catch all)
+const PULSE_SPAWN_INTERVAL = 20000; // rarer than clocks
+const PULSE_FALL_SPEED = 60;
+const MAX_PULSES = 1;
+
 // Flap cycle: row 0 frames 0-3 (close) then row 3 frames 0-3 (open)
 const FLAP_CYCLE = [
     { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 },
@@ -37,8 +42,10 @@ export class ButterflyMode {
 
         this.butterflies = [];
         this.clocks = [];
+        this.pulses = [];
         this.spawnTimer = 0;
         this.clockSpawnTimer = 0;
+        this.pulseSpawnTimer = 0;
 
         // Game state
         this.timeRemaining = 60000; // 60 seconds in ms
@@ -57,8 +64,10 @@ export class ButterflyMode {
     _reset() {
         this.butterflies = [];
         this.clocks = [];
+        this.pulses = [];
         this.spawnTimer = 0;
         this.clockSpawnTimer = 4000; // first clock after 4s
+        this.pulseSpawnTimer = 12000; // first pulse after 12s
         this.timeRemaining = 60000;
         this.caught = 0;
         this.gameOver = false;
@@ -174,6 +183,41 @@ export class ButterflyMode {
             }
         }
 
+        // Spawn pulses
+        this.pulseSpawnTimer -= deltaTime;
+        if (this.pulseSpawnTimer <= 0 && this.pulses.length < MAX_PULSES) {
+            this.pulseSpawnTimer = PULSE_SPAWN_INTERVAL;
+            this.pulses.push({
+                x: Math.random() * (this.canvasWidth - 40) + 20,
+                y: -20,
+            });
+        }
+
+        // Update pulses
+        for (let i = this.pulses.length - 1; i >= 0; i--) {
+            const p = this.pulses[i];
+            p.y += PULSE_FALL_SPEED * dt;
+
+            const px = player.x + 32;
+            const py = player.y + 32;
+            if (Math.hypot(p.x - px, p.y - py) < 30) {
+                // Catch all butterflies on screen
+                for (const b of this.butterflies) {
+                    if (!b.caught) {
+                        b.caught = true;
+                        b.catchTimer = 500;
+                        this.caught++;
+                    }
+                }
+                this.pulses.splice(i, 1);
+                continue;
+            }
+
+            if (p.y > this.canvasHeight + 20) {
+                this.pulses.splice(i, 1);
+            }
+        }
+
         // Catch check (when player kicks/slashes)
         if (player.state === 'slash') {
             const kickZone = player.getKickZone();
@@ -226,6 +270,11 @@ export class ButterflyMode {
             this._drawClock(ctx, c.x, c.y);
         }
 
+        // Draw pulses
+        for (const p of this.pulses) {
+            this._drawPulse(ctx, p.x, p.y);
+        }
+
         // Draw butterflies
         if (this.imageLoaded) {
             for (const b of this.butterflies) {
@@ -267,6 +316,30 @@ export class ButterflyMode {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('+10', x, y);
+        ctx.restore();
+    }
+
+    _drawPulse(ctx, x, y) {
+        ctx.save();
+        // Purple glowing orb
+        const r = CLOCK_SIZE / 2 + 2;
+        ctx.shadowColor = '#cc44ff';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#9933cc';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#cc66ff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // P text
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('P', x, y);
         ctx.restore();
     }
 
