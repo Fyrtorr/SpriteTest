@@ -302,16 +302,16 @@ export class ButterflyMode {
     _drawClock(ctx, x, y) {
         ctx.save();
         // Clock body
-        ctx.fillStyle = '#ffd700';
+        ctx.fillStyle = '#ff8c00';
         ctx.beginPath();
         ctx.arc(x, y, CLOCK_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#aa8800';
+        ctx.strokeStyle = '#cc6600';
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // +10 text
-        ctx.fillStyle = '#553300';
+        ctx.fillStyle = '#fff';
         ctx.font = 'bold 10px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
