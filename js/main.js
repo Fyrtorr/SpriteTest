@@ -3,6 +3,7 @@ import { Sprite } from './sprite.js';
 import { Player } from './player.js';
 import { createEnvironment, drawEnvironment } from './environment.js';
 import { EffectsManager } from './effects.js';
+import { ButterflyMode } from './butterfly.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -23,6 +24,7 @@ const player = new Player(
 );
 const objects = createEnvironment();
 const effects = new EffectsManager(CANVAS_WIDTH, CANVAS_HEIGHT);
+const butterflyMode = new ButterflyMode(CANVAS_WIDTH, CANVAS_HEIGHT);
 
 // Sprite sheet selector
 const SPRITE_SHEETS = [
@@ -74,6 +76,13 @@ dodgeballBtn.addEventListener('click', () => {
     else dodgeballBtn.classList.remove('intense');
 });
 
+const butterflyBtn = document.getElementById('toggle-butterfly');
+butterflyBtn.addEventListener('click', () => {
+    const active = butterflyMode.toggle();
+    butterflyBtn.classList.toggle('active', active);
+    butterflyBtn.textContent = active ? 'Butterfly: On' : 'Butterfly: Off';
+});
+
 // Survival timer
 let survivalTime = 0;
 let bestTime = parseFloat(localStorage.getItem('dodgeball-best') || '0');
@@ -88,6 +97,7 @@ function gameLoop(now) {
 
     player.update(deltaTime, objects);
     effects.update(deltaTime, player);
+    butterflyMode.update(deltaTime, player);
     sprite.setAnimation(player.state);
     sprite.update(deltaTime);
 
@@ -113,9 +123,10 @@ function gameLoop(now) {
     drawEnvironment(ctx, objects);
     drawShadow(ctx, player);
     effects.draw(ctx);
+    butterflyMode.draw(ctx);
     sprite.draw(ctx, player.x, player.drawY, player.direction);
 
-    if (effects.isActive('dodgeball')) {
+    if (effects.isActive('dodgeball') && !butterflyMode.active) {
         drawTimer(ctx);
     }
 

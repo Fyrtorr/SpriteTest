@@ -68,6 +68,11 @@ canvas {
     border-color: #ee4444;
 }
 
+.butterfly-btn.active {
+    background: #2288aa;
+    border-color: #44bbdd;
+}
+
 .effect-btn.intense {
     background: #ee4400;
     border-color: #ff6622;
