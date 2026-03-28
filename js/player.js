@@ -57,7 +57,7 @@ export class Player {
         }
     }
 
-    update(deltaTime, objects) {
+    update(deltaTime, objects, bounds) {
         const dt = deltaTime / 1000;
 
         // Handle hurt stun
@@ -130,9 +130,14 @@ export class Player {
             this.y += (dy / magnitude) * speed * dt;
             if (this._collidesWithWall(objects)) this.y = oldY;
 
-            // Clamp to canvas
-            this.x = Math.max(0, Math.min(this.canvasWidth - 64, this.x));
-            this.y = Math.max(0, Math.min(this.canvasHeight - 64, this.y));
+            // Clamp to world bounds
+            if (bounds) {
+                this.x = Math.max(bounds.minX, Math.min(bounds.maxX, this.x));
+                this.y = Math.max(bounds.minY, Math.min(bounds.maxY, this.y));
+            } else {
+                this.x = Math.max(0, Math.min(this.canvasWidth - 64, this.x));
+                this.y = Math.max(0, Math.min(this.canvasHeight - 64, this.y));
+            }
 
             if (this.isGrounded) {
                 this.state = isRunning ? 'run' : 'walk';

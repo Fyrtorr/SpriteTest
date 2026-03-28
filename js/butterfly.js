@@ -74,7 +74,7 @@ export class ButterflyMode {
         this.gameOverTimer = 0;
     }
 
-    update(deltaTime, player) {
+    update(deltaTime, player, cameraX = 0) {
         if (!this.active) return;
 
         if (this.gameOver) {
@@ -168,8 +168,8 @@ export class ButterflyMode {
             const c = this.clocks[i];
             c.y += CLOCK_FALL_SPEED * dt;
 
-            // Collect on player contact
-            const px = player.x + 32;
+            // Collect on player contact (screen space)
+            const px = player.x - cameraX + 32;
             const py = player.y + 32;
             if (Math.hypot(c.x - px, c.y - py) < 30) {
                 this.timeRemaining += CLOCK_BONUS;
@@ -198,7 +198,7 @@ export class ButterflyMode {
             const p = this.pulses[i];
             p.y += PULSE_FALL_SPEED * dt;
 
-            const px = player.x + 32;
+            const px = player.x - cameraX + 32;
             const py = player.y + 32;
             if (Math.hypot(p.x - px, p.y - py) < 30) {
                 // Catch all butterflies on screen
@@ -218,14 +218,15 @@ export class ButterflyMode {
             }
         }
 
-        // Catch check (when player kicks/slashes)
+        // Catch check (when player kicks/slashes — convert kick zone to screen space)
         if (player.state === 'slash') {
             const kickZone = player.getKickZone();
             if (kickZone) {
+                const sk = { x: kickZone.x - cameraX, y: kickZone.y, w: kickZone.w, h: kickZone.h };
                 for (const b of this.butterflies) {
                     if (b.caught) continue;
-                    if (b.x > kickZone.x && b.x < kickZone.x + kickZone.w &&
-                        b.y > kickZone.y && b.y < kickZone.y + kickZone.h) {
+                    if (b.x > sk.x && b.x < sk.x + sk.w &&
+                        b.y > sk.y && b.y < sk.y + sk.h) {
                         b.caught = true;
                         b.catchTimer = 500;
                         b.scale = 1;

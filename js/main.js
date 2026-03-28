@@ -1,7 +1,7 @@
 import { clearPressedKeys } from './input.js';
 import { Sprite } from './sprite.js';
 import { Player } from './player.js';
-import { createEnvironment, drawEnvironment } from './environment.js';
+import { createEnvironment, drawEnvironment, drawBackground, world } from './environment.js';
 import { EffectsManager } from './effects.js';
 import { ButterflyMode } from './butterfly.js';
 
@@ -25,6 +25,7 @@ const player = new Player(
 const objects = createEnvironment();
 const effects = new EffectsManager(CANVAS_WIDTH, CANVAS_HEIGHT);
 const butterflyMode = new ButterflyMode(CANVAS_WIDTH, CANVAS_HEIGHT);
+const camera = { x: 0 };
 
 // Sprite sheet selector
 const SPRITE_SHEETS = [
@@ -95,9 +96,24 @@ function gameLoop(now) {
     lastTime = now;
     if (deltaTime > MAX_DELTA) deltaTime = MAX_DELTA;
 
-    player.update(deltaTime, objects);
-    effects.update(deltaTime, player);
-    butterflyMode.update(deltaTime, player);
+    const bounds = {
+        minX: 0,
+        maxX: world.width - 64,
+        minY: world.walkableMinY,
+        maxY: CANVAS_HEIGHT - 64,
+    };
+    player.update(deltaTime, objects, bounds);
+
+    // Camera follows player horizontally, clamped to world edges
+    camera.x = player.x + 32 - CANVAS_WIDTH / 2;
+    if (world.width > CANVAS_WIDTH) {
+        camera.x = Math.max(0, Math.min(world.width - CANVAS_WIDTH, camera.x));
+    } else {
+        camera.x = 0;
+    }
+
+    effects.update(deltaTime, player, camera.x);
+    butterflyMode.update(deltaTime, player, camera.x);
     sprite.setAnimation(player.state);
     sprite.update(deltaTime);
 
@@ -117,14 +133,13 @@ function gameLoop(now) {
     }
 
     // Draw
-    ctx.fillStyle = '#4a8c3f';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawBackground(ctx, camera.x, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    drawEnvironment(ctx, objects);
-    drawShadow(ctx, player);
+    const screenX = player.x - camera.x;
+    drawShadow(ctx, screenX, player);
     effects.draw(ctx);
     butterflyMode.draw(ctx);
-    sprite.draw(ctx, player.x, player.drawY, player.direction);
+    sprite.draw(ctx, screenX, player.drawY, player.direction);
 
     if (effects.isActive('dodgeball') && !butterflyMode.active) {
         drawTimer(ctx);
@@ -166,8 +181,8 @@ function formatTime(ms) {
     return `${sec}.${dec}s`;
 }
 
-function drawShadow(ctx, player) {
-    const shadowX = player.x + 32;
+function drawShadow(ctx, screenX, player) {
+    const shadowX = screenX + 32;
     const shadowY = player.y + 58;
     const lift = player.z - player.groundLevel;
     const scale = Math.max(0.3, 1 - lift / 120);

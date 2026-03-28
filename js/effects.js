@@ -37,9 +37,9 @@ export class EffectsManager {
         return this.activeEffects.has(effectName);
     }
 
-    update(deltaTime, player) {
+    update(deltaTime, player, cameraX = 0) {
         if (this.activeEffects.has('dodgeball')) {
-            this._updateDodgeballs(deltaTime, player);
+            this._updateDodgeballs(deltaTime, player, cameraX);
         }
     }
 
@@ -49,7 +49,7 @@ export class EffectsManager {
         }
     }
 
-    _updateDodgeballs(deltaTime, player) {
+    _updateDodgeballs(deltaTime, player, cameraX) {
         const dt = deltaTime / 1000;
         const interval = SPAWN_INTERVALS[this.dodgeballIntensity] || 400;
 
@@ -74,14 +74,15 @@ export class EffectsManager {
             });
         }
 
-        // Kick detection
+        // Kick detection (convert kick zone to screen space)
         const kickZone = player.getKickZone();
         if (kickZone) {
+            const sk = { x: kickZone.x - cameraX, y: kickZone.y, w: kickZone.w, h: kickZone.h };
             for (const ball of this.dodgeballs) {
                 if (ball.kicked) continue;
                 // Check if ball center is inside kick zone
-                if (ball.x > kickZone.x && ball.x < kickZone.x + kickZone.w &&
-                    ball.y > kickZone.y && ball.y < kickZone.y + kickZone.h &&
+                if (ball.x > sk.x && ball.x < sk.x + sk.w &&
+                    ball.y > sk.y && ball.y < sk.y + sk.h &&
                     ball.z < 30) {
                     ball.kicked = true;
                     ball.bounces = 0; // reset bounces so it lives longer
@@ -119,9 +120,9 @@ export class EffectsManager {
                 ball.z = 0;
                 ball.bounces++;
 
-                // Check hit on player at bounce point
+                // Check hit on player at bounce point (screen space)
                 if (player.state !== 'hurt') {
-                    const px = player.x + 32;
+                    const px = player.x - cameraX + 32;
                     const py = player.y + 32;
                     const dist = Math.hypot(ball.x - px, ball.y - py);
                     if (dist < 30 && player.z < 20) {
